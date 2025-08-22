@@ -1,133 +1,634 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riveria Labs - The Next Frontier of Play</title>
+    <link rel="icon" href="./favicon.ico" type="image/x-icon" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>#000000</title>
-    <link type="image/x-icon" rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAHklEQVQ4T2NkYGD4z0ABYBw1gGE0DBhGw4BhWIQBAE5OEAELnjVHAAAAAElFTkSuQmCC">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Three.js Library for 3D Globe -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <style>
-        :root {
-            --color: #000000;
-            --color-transparent: #00000022;
-        }
+      /* Base styles for the light theme */
+      :root {
+        --bg-color: #f8fafc;
+        --text-color-primary: #1e293b; /* slate-800 */
+        --text-color-secondary: #475569; /* slate-600 */
+        --grid-color: rgba(0, 123, 255, 0.05);
+        --header-logo-color: #007bff;
+        --header-icon-color: #64748b; /* slate-500 */
+        --header-icon-hover: #007bff;
+        --card-bg: rgba(255, 255, 255, 0.65);
+        --card-border: rgba(0, 0, 0, 0.05);
+        --card-hover-border: rgba(0, 123, 255, 0.2);
+        --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        --footer-border: #e2e8f0; /* slate-200 */
+        --footer-text: #64748b; /* slate-500 */
+      }
 
-        ::selection {
-            background: var(--color-transparent);
-        }
+      body.dark {
+        --bg-color: #0a192f;
+        --text-color-primary: #e2e8f0; /* slate-200 */
+        --text-color-secondary: #94a3b8; /* slate-400 */
+        --grid-color: rgba(100, 255, 218, 0.07);
+        --header-logo-color: #64ffda;
+        --header-icon-color: #94a3b8; /* slate-400 */
+        --header-icon-hover: #64ffda;
+        --card-bg: rgba(23, 37, 61, 0.5); /* #17253d with alpha */
+        --card-border: rgba(255, 255, 255, 0.1);
+        --card-hover-border: rgba(100, 255, 218, 0.3);
+        --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        --footer-border: rgba(255, 255, 255, 0.1);
+        --footer-text: #94a3b8; /* slate-400 */
+      }
 
-        html,
-        body {
-            background: var(--color);
-            height: 100%;
-            margin: 0;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color-secondary);
+        overflow-x: hidden;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
 
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
+      .grid-bg {
+        background-image: linear-gradient(
+            var(--grid-color) 1px,
+            transparent 1px
+          ),
+          linear-gradient(to right, var(--grid-color) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
 
-        #color {
-            background: white;
-            color: var(--color);
-            font-size: 2.5rem;
-            font-weight: 300;
-            padding: 2.25rem 3rem;
-            font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, ubuntu, roboto, noto, segoe ui, arial, sans-serif;
-            cursor: text;
-        }
+      #scene-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        overflow: hidden;
+      }
+
+      .glass-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1px solid var(--card-border);
+        transition: all 0.3s ease;
+      }
+      .dark .glass-card:hover {
+        box-shadow: 0 0 25px rgba(100, 255, 218, 0.3),
+          0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+      .glass-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: var(--card-shadow);
+        border-color: var(--card-hover-border);
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .status-development {
+        background-color: rgba(255, 152, 0, 0.1);
+        color: #ff9800;
+      }
+      .status-archived {
+        background-color: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+      }
+
+      .fade-in-section {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+      }
+      .fade-in-section.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Hide original h1 as it's used for generating particles */
+      #hero-title {
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+      }
     </style>
-</head>
+  </head>
+  <body class="antialiased grid-bg">
+    <!-- Main Content Container -->
+    <div class="relative z-10">
+      <!-- Hero Section -->
+      <div class="relative min-h-screen px-6 md:px-12 lg:px-24 flex flex-col">
+        <header class="py-8 grid grid-cols-3 items-center w-full relative z-10">
+          <div class="flex items-center space-x-3">
+            <span
+              class="text-slate-800 font-bold text-xl"
+              style="color: var(--text-color-primary)"
+              >Riveria Labs</span
+            >
+          </div>
+          <div class="flex justify-center">
+            <button
+              id="theme-toggle"
+              class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <svg
+                id="theme-icon-sun"
+                class="w-6 h-6 text-slate-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+              <svg
+                id="theme-icon-moon"
+                class="w-6 h-6 text-slate-400 hidden"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="flex items-center space-x-6 justify-end">
+            <a
+              href="https://x.com/CofRiveriaNFT"
+              class="text-slate-500 hover:text-blue-500"
+              style="color: var(--header-icon-color)"
+              ><svg
+                class="w-6 h-6"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.71v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"
+                ></path></svg
+            ></a>
+          </div>
+        </header>
 
-<body>
-    <p id="color">#000000</p>
-    <script>
-        function randomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1) + min);
-        }
+        <main
+          id="hero-main"
+          class="flex-grow flex flex-col items-center justify-center text-center relative"
+        >
+          <!-- 3D Scene is absolutely positioned inside this container -->
+          <div id="scene-container"></div>
+          <div class="relative z-10">
+            <!-- This h1 is hidden but provides the text for the 3D effect -->
+            <h1
+              id="hero-title"
+              class="text-4xl md:text-5xl lg:text-6xl font-black text-slate-800 leading-tight max-w-4xl mx-auto"
+            >
+              RIVERIA
+            </h1>
+            <!-- The subtitle is normal HTML text -->
+          </div>
+        </main>
+      </div>
 
-        function hslToHex(h, s, l) {
-            h /= 360;
-            s /= 100;
-            l /= 100;
-            var r = void 0,
-                g = void 0,
-                b = void 0;
-            if (s === 0) {
-                r = g = b = l; // achromatic
-            } else {
-                var hue2rgb = function hue2rgb(p, q, t) {
-                    if (t < 0) t += 1;
-                    if (t > 1) t -= 1;
-                    if (t < 1 / 6) return p + (q - p) * 6 * t;
-                    if (t < 1 / 2) return q;
-                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                    return p;
-                };
-                var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                var p = 2 * l - q;
-                r = hue2rgb(p, q, h + 1 / 3);
-                g = hue2rgb(p, q, h);
-                b = hue2rgb(p, q, h - 1 / 3);
-            }
-            var toHex = function toHex(x) {
-                var hex = Math.round(x * 255).toString(16);
-                return hex.length === 1 ? '0' + hex : hex;
-            };
-            return '#' + toHex(r) + toHex(g) + toHex(b);
-        }
+      <section id="our-projects" class="py-20 lg:py-32 px-6 md:px-12 lg:px-24">
+        <div class="text-center mb-16 fade-in-section">
+          <h2
+            class="text-3xl md:text-4xl font-bold text-slate-800"
+            style="color: var(--text-color-primary)"
+          >
+            Projects
+          </h2>
+          <p class="mt-4 text-lg" style="color: var(--text-color-secondary)">
+            The Frontier of Play! A legacy of innovation, building the future of
+            web3 gaming.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <a
+            href="#"
+            class="glass-card rounded-2xl fade-in-section relative overflow-hidden min-h-[350px] group"
+          >
+            <img
+              src="./RLAB.png"
+              onerror="this.onerror=null;this.src='https://placehold.co/600x400/E0E7FF/3730A3?text=Archive';"
+              alt="Abstract background"
+              class="absolute inset-0 w-full h-full object-cover opacity-20 transition-transform duration-500 group-hover:scale-110"
+            />
+            <div
+              class="relative z-10 p-8 flex flex-col h-full bg-gradient-to-t from-white/90 via-white/50 to-transparent dark:from-slate-900/90 dark:via-slate-900/50"
+            >
+              <div class="flex-grow">
+                <h3
+                  class="text-2xl font-bold text-slate-800"
+                  style="color: var(--text-color-primary)"
+                >
+                  Riveria Marketplace
+                </h3>
+                <p
+                  class="leading-relaxed mt-2"
+                  style="color: var(--text-color-secondary)"
+                >
+                  A decentralized marketplace for web3 consumer.
+                </p>
+              </div>
+              <div class="flex justify-between items-end">
+                <div class="status-badge status-archived mt-4 self-start">
+                  Archived
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity translate-x-[-10px] group-hover:translate-x-0 duration-300"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </div>
+            </div>
+          </a>
+          <a
+            href="#"
+            class="glass-card rounded-2xl fade-in-section relative overflow-hidden min-h-[350px] group"
+            style="transition-delay: 100ms"
+          >
+            <img
+              src="./hoopies1.png"
+              onerror="this.onerror=null;this.src='https://placehold.co/600x400/C4B5FD/4338CA?text=Hoopies';"
+              alt="Abstract background"
+              class="absolute inset-0 w-full h-full object-cover opacity-20 transition-transform duration-500 group-hover:scale-110"
+            />
+            <div
+              class="relative z-10 p-8 flex flex-col h-full bg-gradient-to-t from-white/90 via-white/50 to-transparent dark:from-slate-900/90 dark:via-slate-900/50"
+            >
+              <div class="flex-grow">
+                <h3
+                  class="text-2xl font-bold text-slate-800"
+                  style="color: var(--text-color-primary)"
+                >
+                  Hoopies
+                </h3>
+                <p
+                  class="leading-relaxed mt-2"
+                  style="color: var(--text-color-secondary)"
+                >
+                  A duel-to-earn and P2E web3 party game on Solana
+                </p>
+              </div>
+              <div class="flex justify-between items-end">
+                <div class="status-badge status-development mt-4 self-start">
+                  In Development
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity translate-x-[-10px] group-hover:translate-x-0 duration-300"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
 
-        window.onload = function () {
-            let stopProp = function (ev) {
-                ev.stopPropagation();
-            }
+      <footer
+        class="text-center py-12 border-t"
+        style="border-color: var(--footer-border)"
+      >
+        <p class="text-sm" style="color: var(--footer-text)">
+          &copy; 2025 Riveria Labs. All rights reserved.
+        </p>
+      </footer>
+    </div>
 
-            var colorElement = document.getElementById("color");
-            colorElement.addEventListener("click", stopProp, false);
-            colorElement.addEventListener("mousedown", stopProp, false);
+    <script type="module">
+      // --- Scroll Animation Logic ---
+      const animatedSections = document.querySelectorAll(".fade-in-section");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) entry.target.classList.add("is-visible");
+          });
+        },
+        { threshold: 0.1 }
+      );
+      animatedSections.forEach((section) => observer.observe(section));
 
-            var setFavicon = function (hex) {
-                var canvas = document.createElement('canvas');
-                canvas.width = 16;
-                canvas.height = 16;
-                var ctx = canvas.getContext('2d');
-                ctx.fillStyle = hex;
-                ctx.fillRect(0, 0, 16, 16);
-                document.getElementsByTagName('link')[0].href = canvas.toDataURL("image/x-icon");
-            }
+      // --- 3D Scene Logic ---
+      if (typeof THREE !== "undefined") {
+        const container = document.getElementById("scene-container");
+        const heroMain = document.getElementById("hero-main");
+        let scene, camera, renderer, globe, stars, textParticles;
+        let mouse = new THREE.Vector2(-100, -100); // Start mouse way off-screen
+        let targetRotation = { x: 0, y: 0 };
 
-            var setRandomColor = function setRandomColor() {
-                var h = void 0,
-                    s = void 0,
-                    l = void 0;
-
-                h = randomInt(0, 359);
-                s = randomInt(55, 75);
-                l = randomInt(40, 60);
-
-                document.documentElement.style.setProperty('--color', 'hsl(' + h + ', ' + s + '%, ' + l + '%)');
-                var hex = hslToHex(h, s, l);
-                document.title = hex;
-                colorElement.innerHTML = hex;
-                document.documentElement.style.setProperty('--color-transparent', hex + '22');
-
-                setFavicon(hex);
-            };
-            setRandomColor();
-
-            var body = document.getElementsByTagName("body")[0];
-            body.addEventListener("mousedown", function (ev) {
-                ev.preventDefault();
-            });
-            body.addEventListener("click", function () {
-                setRandomColor();
-            }, false);
+        // Colors for themes
+        const lightColors = {
+          globe: 0x007bff,
+          stars: 0x475569,
+          text: 0x0d47a1,
         };
-    </script>
-</body>
+        const darkColors = {
+          globe: 0x64ffda,
+          stars: 0x94a3b8,
+          text: 0xffffff,
+        };
 
+        function init() {
+          scene = new THREE.Scene();
+          camera = new THREE.PerspectiveCamera(
+            75,
+            heroMain.clientWidth / heroMain.clientHeight,
+            0.1,
+            1000
+          );
+          camera.position.z = 5;
+
+          renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+          renderer.setSize(heroMain.clientWidth, heroMain.clientHeight);
+          renderer.setPixelRatio(window.devicePixelRatio);
+          container.appendChild(renderer.domElement);
+
+          // Globe
+          const globeGeom = new THREE.SphereGeometry(2.5, 64, 64);
+          const globeMat = new THREE.PointsMaterial({
+            color: lightColors.globe,
+            size: 0.02,
+            transparent: true,
+            opacity: 0.6,
+          });
+          globe = new THREE.Points(globeGeom, globeMat);
+          scene.add(globe);
+
+          // Stars
+          const starVertices = [];
+          for (let i = 0; i < 5000; i++) {
+            starVertices.push(
+              THREE.MathUtils.randFloatSpread(50),
+              THREE.MathUtils.randFloatSpread(50),
+              THREE.MathUtils.randFloatSpread(50)
+            );
+          }
+          const starGeom = new THREE.BufferGeometry();
+          starGeom.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(starVertices, 3)
+          );
+          const starMat = new THREE.PointsMaterial({
+            color: lightColors.stars,
+            size: 0.02,
+            transparent: true,
+            opacity: 0.5,
+          });
+          stars = new THREE.Points(starGeom, starMat);
+          scene.add(stars);
+
+          // Add a second set of stars for the "breathtaking" dark mode effect
+          const twinkleGeom = new THREE.BufferGeometry();
+          twinkleGeom.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(starVertices.slice(0, 1500), 3)
+          ); // fewer stars
+          const twinkleMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.03,
+            transparent: true,
+            opacity: 0.8,
+          });
+          const twinkleStars = new THREE.Points(twinkleGeom, twinkleMat);
+          twinkleStars.visible = false; // Initially hidden
+          scene.add(twinkleStars);
+
+          // Particle Text
+          createTextParticles();
+
+          heroMain.addEventListener("mousemove", onMouseMove, false);
+          window.addEventListener("resize", onWindowResize, false);
+
+          // Expose a function to update colors for the theme toggle
+          window.updateThemeColors = (isDark) => {
+            const colors = isDark ? darkColors : lightColors;
+            if (globe) globe.material.color.setHex(colors.globe);
+            if (stars) stars.material.color.setHex(colors.stars);
+            if (textParticles) textParticles.material.color.setHex(colors.text);
+            twinkleStars.visible = isDark;
+          };
+        }
+
+        function createTextParticles() {
+          const textEl = document.getElementById("hero-title");
+          if (!textEl) return;
+          const text = textEl.innerText;
+          const tempCanvas = document.createElement("canvas");
+          const tempCtx = tempCanvas.getContext("2d");
+
+          const isMobile = window.innerWidth < 768;
+          const fontSize = isMobile ? 80 : 120;
+          const font = `900 ${fontSize}px Inter`;
+
+          tempCtx.font = font;
+          const textMetrics = tempCtx.measureText(text);
+          const textWidth = textMetrics.width;
+
+          tempCanvas.width = textWidth;
+          tempCanvas.height = fontSize * 1.2;
+
+          tempCtx.font = font;
+          tempCtx.fillStyle = "#000000";
+          tempCtx.textAlign = "center";
+          tempCtx.textBaseline = "middle";
+          tempCtx.fillText(text, tempCanvas.width / 2, tempCanvas.height / 2);
+
+          const imageData = tempCtx.getImageData(
+            0,
+            0,
+            tempCanvas.width,
+            tempCanvas.height
+          );
+          const positions = [];
+          const samplingRate = isMobile ? 6 : 4;
+
+          for (let y = 0; y < imageData.height; y += samplingRate) {
+            for (let x = 0; x < imageData.width; x += samplingRate) {
+              const alpha = imageData.data[(y * imageData.width + x) * 4 + 3];
+              if (alpha > 128) {
+                const posX = (x - tempCanvas.width / 2) / 100;
+                const posY = -(y - tempCanvas.height / 2) / 100;
+                positions.push(posX, posY, 0);
+              }
+            }
+          }
+
+          if (positions.length === 0) {
+            console.error(
+              "No pixels for text particles. Font may not be loaded."
+            );
+            return;
+          }
+
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(new Float32Array(positions), 3)
+          );
+          geometry.setAttribute(
+            "initialPosition",
+            new THREE.Float32BufferAttribute(positions.slice(), 3)
+          );
+
+          const material = new THREE.PointsMaterial({
+            color: document.body.classList.contains("dark")
+              ? darkColors.text
+              : lightColors.text,
+            size: isMobile ? 0.04 : 0.05,
+          });
+
+          textParticles = new THREE.Points(geometry, material);
+          textParticles.position.y = 0; // Centered vertically
+          textParticles.position.z = 1.5; // Position in front of the globe
+          scene.add(textParticles);
+        }
+
+        function onWindowResize() {
+          if (!camera || !renderer) return;
+          camera.aspect = heroMain.clientWidth / heroMain.clientHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(heroMain.clientWidth, heroMain.clientHeight);
+        }
+
+        function onMouseMove(event) {
+          const rect = heroMain.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = (-(event.clientY - rect.top) / rect.height) * 2 + 1;
+
+          targetRotation.y = mouse.x * 0.25;
+          targetRotation.x = -mouse.y * 0.25;
+        }
+
+        function animate() {
+          requestAnimationFrame(animate);
+
+          if (textParticles) {
+            const positions = textParticles.geometry.attributes.position.array;
+            const initialPositions =
+              textParticles.geometry.attributes.initialPosition.array;
+            const count = positions.length / 3;
+
+            const mouseWorld = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+            mouseWorld.unproject(camera);
+            const dir = mouseWorld.sub(camera.position).normalize();
+            const distance =
+              (textParticles.position.z - camera.position.z) / dir.z;
+            const pos = camera.position
+              .clone()
+              .add(dir.multiplyScalar(distance));
+
+            for (let i = 0; i < count; i++) {
+              const i3 = i * 3;
+              const ix = initialPositions[i3];
+              const iy = initialPositions[i3 + 1];
+
+              const dx = positions[i3] - (pos.x - textParticles.position.x);
+              const dy = positions[i3 + 1] - (pos.y - textParticles.position.y);
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const force = Math.max(0, 1 - dist * 2.0) * 0.1;
+
+              const angle = Math.atan2(dy, dx);
+
+              positions[i3] +=
+                Math.cos(angle) * force + (Math.random() - 0.5) * 0.001;
+              positions[i3 + 1] +=
+                Math.sin(angle) * force + (Math.random() - 0.5) * 0.001;
+
+              positions[i3] += (ix - positions[i3]) * 0.03;
+              positions[i3 + 1] += (iy - positions[i3 + 1]) * 0.03;
+            }
+            textParticles.geometry.attributes.position.needsUpdate = true;
+          }
+
+          // Animate globe
+          globe.rotation.y += (targetRotation.y - globe.rotation.y) * 0.08;
+          globe.rotation.x += (targetRotation.x - globe.rotation.x) * 0.08;
+          globe.rotation.y += 0.0003;
+
+          // Animate stars
+          stars.rotation.y += 0.0001;
+          stars.rotation.x += (targetRotation.x - stars.rotation.x) * 0.001;
+
+          renderer.render(scene, camera);
+        }
+
+        // --- Dark Mode Toggle ---
+        const themeToggle = document.getElementById("theme-toggle");
+        const sunIcon = document.getElementById("theme-icon-sun");
+        const moonIcon = document.getElementById("theme-icon-moon");
+
+        function applyTheme(isDark) {
+          document.body.classList.toggle("dark", isDark);
+          sunIcon.classList.toggle("hidden", isDark);
+          moonIcon.classList.toggle("hidden", !isDark);
+          if (window.updateThemeColors) {
+            window.updateThemeColors(isDark);
+          }
+        }
+
+        themeToggle.addEventListener("click", () => {
+          const isDark = document.body.classList.contains("dark");
+          localStorage.setItem("theme", !isDark ? "dark" : "light");
+          applyTheme(!isDark);
+        });
+
+        // --- Initialization ---
+        document.fonts.ready.then(() => {
+          init();
+          animate();
+
+          // Apply initial theme after 3D objects are created
+          const savedTheme = localStorage.getItem("theme");
+          applyTheme(savedTheme === "dark");
+        });
+      }
+    </script>
+  </body>
 </html>
